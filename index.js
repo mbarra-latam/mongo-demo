@@ -6,11 +6,40 @@ mongoose.connect('mongodb://localhost/playground')
 
 // it defines the shape of course's documents in our MongoDB database 
 const courseSchema = new mongoose.Schema({
-  name: String,
+  name: { 
+    type: String, 
+    required: true,
+    minlength: 5,
+    maxlength: 255,
+    // match: /pattern/
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ['web', 'mobile', 'network']
+  },
   author: String,
-  tags: [ String ],
+  tags: {
+    type: Array,
+    validate: {
+      validator: function(v) {
+        return v && v.length > 0; // if tags is greater than 0 then this property will be valid
+      },
+      message: 'A course should have at least one tag.'
+    }
+  },
   date: { type: Date, default: Date.now },
   isPublished: Boolean,
+  price: {
+    type: Number, 
+    // here we can't not replace with arrow function because arrow functions 
+    // dont't have their own this
+    required: function() {
+      return this.isPublished; // if published is true then price will be required
+    },
+    min: 10,
+    max: 200
+  }
 });
 
 // Now we need to compile the courseSchema into a model
@@ -22,17 +51,25 @@ async function createCourse() {
   // Now, we can create an object based on that class
   const course = new Course({
     name: 'Angular Course',
+    category: 'web',
     author: 'Mosh',
-    tags: ['angular', 'frontend'],
-    isPublished: true
+    tags: null,
+    isPublished: true,
+    price: 15
   });
 
-  // this result is the actual course object that is saved in the database
-  // when we saved this course in MongoDB, it goings to assign an unique identifier
-  // to this course object/document
-  const result = await course.save();
-  console.log(result);
+  try {
+    // this result is the actual course object that is saved in the database
+    // when we saved this course in MongoDB, it goings to assign an unique identifier
+    // to this course object/document
+    const result = await course.save();
+    console.log(result);
+  } catch (ex) {
+    console.log(ex.message);
+  }
 }
+
+createCourse();
 
 async function getCourses() {
   // Comparison Operators
@@ -114,5 +151,3 @@ async function removeCourse(id) {
   const course = await Course.findByIdAndRemove(id);
   console.log(course);
 }
-
-removeCourse('5d6c4da9edd49f2890447332');
