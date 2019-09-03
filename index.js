@@ -16,7 +16,10 @@ const courseSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['web', 'mobile', 'network']
+    enum: ['web', 'mobile', 'network'],
+    lowercase: true, // automatically convert the value of this property to lowercase
+    // uppercase: true
+    trim: true // automatically remove paddings
   },
   author: String,
   tags: {
@@ -44,7 +47,11 @@ const courseSchema = new mongoose.Schema({
       return this.isPublished; // if published is true then price will be required
     },
     min: 10,
-    max: 200
+    max: 200,
+    // the setter is called whe we set the value of a property
+    get: v => Math.round(v),
+    // the getter is called when we read the value of a property
+    set: v => Math.round(v)
   }
 });
 
@@ -57,11 +64,11 @@ async function createCourse() {
   // Now, we can create an object based on that class
   const course = new Course({
     name: 'Angular Course',
-    category: '-',
+    category: 'Web',
     author: 'Mosh',
-    tags: null,
+    tags: ['frontend'],
     isPublished: true,
-    price: 15
+    price: 15.8
   });
 
   try {
@@ -76,7 +83,7 @@ async function createCourse() {
   }
 }
 
-createCourse();
+// createCourse();
 
 async function getCourses() {
   // Comparison Operators
@@ -94,7 +101,7 @@ async function getCourses() {
   // /api/courses?pageNumber=2&pageSize=10
 
   const courses = await Course
-    .find({ author: 'Mosh', isPublished: true })
+    .find({ _id: '5d6ef7e3d7d6a11c44a2897b' })
     // .find({ price: { $gte: 10, $lte: 20 } })
     // .find({ price: { $in: [10, 15, 20] } })
     // .find()
@@ -106,12 +113,12 @@ async function getCourses() {
     // Contains Mosh
     // .find({ author: /.*Mosh.*/i })
     // We use this to implement pagination
-    .skip((pageNumber - 1) * pageSize)
-    .limit(pageSize)
+    // .skip((pageNumber - 1) * pageSize)
+    // .limit(pageSize)
     .sort({ name: 1 }) // 1 indicates ascending order, -1 indicates descending order
-    .select({ name: 1, tags: 1 });
+    .select({ name: 1, tags: 1, price: 1 });
     // .count();
-    console.log(courses);
+    console.log(courses[0].price);
 }
 
 async function updateCourse(id) {
@@ -158,3 +165,5 @@ async function removeCourse(id) {
   const course = await Course.findByIdAndRemove(id);
   console.log(course);
 }
+
+getCourses();
